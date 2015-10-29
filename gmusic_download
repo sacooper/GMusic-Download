@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+require 'skyjam'
+
+path = File.join(ENV['HOME'], 'Music')
+
+lib = SkyJam::Library.connect(path)
+
+tests=[]
+for arg in ARGV
+    if arg.match(/^artist=/)
+        q=arg.split('=')[1]
+        tests << (lambda {|t| t.artist.match(/#{q}/i) })
+    elsif arg.match(/^song=/)
+        q=arg.split('=')[1]
+        tests << (lambda {|t| t.title.match(/#{q}/i) })
+    elsif arg.match(/^album=/)
+        q=arg.split('=')[1]
+        tests << (lambda {|t| t.album.match(/#{q}/i) })
+    end
+end
+
+if tests.count == 0
+    puts "usage gmusic_download [artist=...] [album=...] [song=...]"
+    exit 1
+end
+
+songs = lib.tracks.select { |t| tests.all?{|f| f.call(t)}}
+
+if songs.count == 0
+    puts "Could not find any songs matching query"
+    exit 1
+end
+
+
+for song in songs
+    artist = song.artist.gsub('/', ' ')
+    artist_dir = File.join(path, artist)
+    if not Dir.exist? artist_dir
+        Dir.mkdir artist_dir
+    end
+
+    album = song.album.gsub('/', ' ')
+
+    album_dir = File.join(artist_dir, album)
+    if not Dir.exist? album_dir
+        Dir.mkdir album_dir
+    end
+
+    puts "Downloading #{song.title}"
+    it = File.new(File.join(album_dir, "#{song.title.gsub('/', '-')}.mp3"), 'w+')
+    it << song.data
+end
