@@ -1,13 +1,22 @@
 #!/usr/bin/env ruby
 require 'skyjam'
 
+def help
+    puts "usage gmusic_download [artist=...] [album=...] [song=...]"
+    exit 1
+end
+
 path = File.join(ENV['HOME'], 'Music')
+
+#SkyJam::Library.auth
 
 lib = SkyJam::Library.connect(path)
 
 tests=[]
-for arg in ARGV
-    if arg.match(/^artist=/)
+ARGV.each do |arg|
+    if arg.match(/--help/) or arg.match(/^-h$/)
+        help
+    elsif arg.match(/^artist=/)
         q=arg.split('=')[1]
         tests << (lambda {|t| t.artist.match(/#{q}/i) })
     elsif arg.match(/^song=/)
@@ -20,8 +29,7 @@ for arg in ARGV
 end
 
 if tests.count == 0
-    puts "usage gmusic_download [artist=...] [album=...] [song=...]"
-    exit 1
+    help
 end
 
 songs = lib.tracks.select { |t| tests.all?{|f| f.call(t)}}
