@@ -5,9 +5,7 @@ $usage="
 Usage:
     usage gmusic_download [artist=...] [album=...] [song=...] [-n] [-h]
 
-Options:
-    -n, --noact
-        Only print the results, do not download anything
+Options: -n, --noact Only print the results, do not download anything
 
     -h, --help
         Print help and exit
@@ -60,22 +58,22 @@ end
 
 
 for song in songs
-    artist = song.artist.gsub('/', ' ')
-    artist_dir = File.join(path, artist)
-    if not Dir.exist? artist_dir
-        Dir.mkdir artist_dir
-    end
-
-    album = song.album.gsub('/', ' ')
-
-    album_dir = File.join(artist_dir, album)
-    if not Dir.exist? album_dir
-        Dir.mkdir album_dir
-    end
-
     if no_act
         puts "Found #{song.title} by #{song.artist}"
     else
+        artist = song.artist.gsub('/', ' ').strip
+        artist_dir = File.join(path, artist)
+        if not Dir.exist? artist_dir
+            Dir.mkdir artist_dir
+        end
+
+        album = song.album.gsub('/', ' ').strip
+
+        album_dir = File.join(artist_dir, album)
+        if not Dir.exist? album_dir
+            Dir.mkdir album_dir
+        end
+
         puts "Downloading #{song.title} by #{song.artist}"
         it = File.new(File.join(album_dir, "#{song.title.gsub('/', '-')}.mp3"), 'w+')
         it << song.data
