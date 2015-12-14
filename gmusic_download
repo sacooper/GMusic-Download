@@ -1,21 +1,29 @@
 #!/usr/bin/env ruby
 require 'skyjam'
 
-def help
-    puts "usage gmusic_download [artist=...] [album=...] [song=...]"
-    exit 1
+$usage="
+Usage:
+    usage gmusic_download [artist=...] [album=...] [song=...] [-n] [-h]
+
+Options:
+    -n, --noact
+        Only print the results, do not download anything
+
+    -h, --help
+        Print help and exit
+"
+
+def help(code=1)
+    puts $usage
+    exit code
 end
 
-path = File.join(ENV['HOME'], 'Music')
-
-#SkyJam::Library.auth
-
-lib = SkyJam::Library.connect(path)
+no_act=false
 
 tests=[]
 ARGV.each do |arg|
     if arg.match(/--help/) or arg.match(/^-h$/)
-        help
+        help 0
     elsif arg.match(/^artist=/)
         q=arg.split('=')[1]
         tests << (lambda {|t| t.artist.match(/#{q}/i) })
@@ -25,11 +33,22 @@ ARGV.each do |arg|
     elsif arg.match(/^album=/)
         q=arg.split('=')[1]
         tests << (lambda {|t| t.album.match(/#{q}/i) })
+    elsif arg == "-n" or arg == "--noact"
+        no_act=true
     end
 end
 
+path = File.join(ENV['HOME'], 'Music')
+
 if tests.count == 0
     help
+end
+
+lib = SkyJam::Library.connect(path)
+
+if lib.tracks.count == 0
+    puts "No tracks available. Maybe we haven't authorized?"
+    SkyJam::Library.auth
 end
 
 songs = lib.tracks.select { |t| tests.all?{|f| f.call(t)}}
@@ -54,7 +73,11 @@ for song in songs
         Dir.mkdir album_dir
     end
 
-    puts "Downloading #{song.title}"
-    it = File.new(File.join(album_dir, "#{song.title.gsub('/', '-')}.mp3"), 'w+')
-    it << song.data
+    if no_act
+        puts "Found #{song.title} by #{song.artist}"
+    else
+        puts "Downloading #{song.title} by #{song.artist}"
+        it = File.new(File.join(album_dir, "#{song.title.gsub('/', '-')}.mp3"), 'w+')
+        it << song.data
+    end
 end
