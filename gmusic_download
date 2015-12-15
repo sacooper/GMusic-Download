@@ -42,7 +42,12 @@ if tests.count == 0
     help
 end
 
-lib = SkyJam::Library.connect(path)
+begin 
+    lib = SkyJam::Library.connect(path)
+rescue SkyJam::Client::Error
+    SkyJam::Library.auth
+    lib = SkyJam::Library.connect(path)
+end
 
 if lib.tracks.count == 0
     puts "No tracks available. Maybe we haven't authorized?"
@@ -55,7 +60,6 @@ if songs.count == 0
     puts "Could not find any songs matching query"
     exit 1
 end
-
 
 for song in songs
     if no_act
@@ -75,7 +79,7 @@ for song in songs
         end
 
         puts "Downloading #{song.title} by #{song.artist}"
-        it = File.new(File.join(album_dir, "#{song.title.gsub('/', '-')}.mp3"), 'w+')
-        it << song.data
+        it = File.new(File.join(album_dir, "#{song.number.to_s.rjust(2, "0")} - #{song.title.gsub('/', '-')}.mp3"), 'w+')
+        it << song.data(remote:true)
     end
 end
