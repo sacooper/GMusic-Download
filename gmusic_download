@@ -65,36 +65,36 @@ if no_act
     songs.each do |song|
         puts "Found #{song.title} by #{song.artist}"
     end
-end
+else
+    albums={}
+    songs.map(&:album).uniq.each{|a| albums[a] = [] }
+    songs.each{|s| albums[s.album] << s }
 
-albums={}
-songs.map(&:album).uniq.each{|a| albums[a] = [] }
-songs.each{|s| albums[s.album] << s }
+    threads = albums.map do |album,tracks|
+        artist = tracks[0].artist.gsub('/', ' ').strip
+        artist_dir = File.join(path, artist)
 
-threads = albums.map do |album,tracks|
-    artist = tracks[0].artist.gsub('/', ' ').strip
-    artist_dir = File.join(path, artist)
+        if not Dir.exist? artist_dir
+            Dir.mkdir artist_dir
+        end
 
-    if not Dir.exist? artist_dir
-        Dir.mkdir artist_dir
-    end
+        album = album.gsub('/', ' ').strip
+        album_dir = File.join(artist_dir, album)
 
-    album = album.gsub('/', ' ').strip
-    album_dir = File.join(artist_dir, album)
+        if not Dir.exist? album_dir
+            Dir.mkdir album_dir
+        end
 
-    if not Dir.exist? album_dir
-        Dir.mkdir album_dir
-    end
-
-    Thread.new do
-        tracks.each do |song|
-            puts "Downloading #{song.title} by #{song.artist}"
-            it = File.new(File.join(album_dir, "#{song.number.to_s.rjust(2, "0")} - #{song.title.gsub('/', '-')}.mp3"), 'w+')
-            it << song.data(remote:true)
+        Thread.new do
+            tracks.each do |song|
+                puts "Downloading #{song.title} by #{song.artist}"
+                it = File.new(File.join(album_dir, "#{song.number.to_s.rjust(2, "0")} - #{song.title.gsub('/', '-')}.mp3"), 'w+')
+                it << song.data(remote:true)
+            end
         end
     end
-end
 
-threads.each do |t|
-    t.join
+    threads.each do |t|
+        t.join
+    end
 end
